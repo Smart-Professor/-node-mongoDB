@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>文件上传</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial; max-width: 500px; margin: 0 auto; padding: 20px; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 4px; color: white; z-index: 1000; display: none; }
+        .success { background: #52c41a; }
+        .error { background: #ff4d4f; }
+        #uploadForm { margin-top: 20px; }
+        input[type="file"] { margin-bottom: 10px; }
+        button { padding: 8px 16px; background: #1890ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #40a9ff; }
+    </style>
+</head>
+<body>
+    <h1>文件上传</h1>
+    <p><a href="/gallery.html">查看已上传的图片</a></p>
+    <form id="uploadForm">
+        <input type="file" id="fileInput" name="image">
+        <button type="button" onclick="uploadFile()">上传</button>
+    </form>
+    
+    <div id="toast" class="toast"></div>
+
+    <script>
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+        
+        function uploadFile() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) {
+                showToast('请选择文件', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            // 增加进度监控，优化超时设置，使用绝对路径确保端口正确
+            axios.post('http://localhost:3003/file_upload', formData, {
+                timeout: 60000, // 增加超时时间到60秒
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            }).then(() => {
+                showToast('上传成功', 'success');
+                document.getElementById('fileInput').value = '';
+            }).catch(err => {
+                console.error('上传错误:', err);
+                showToast('上传失败，请重试', 'error');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            min-height: 50px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>文件上传测试</h1>
+    
+    <form id="uploadForm" enctype="multipart/form-data">
+        <div>
+            <label for="image">选择图片文件：</label>
+            <input type="file" id="image" name="image" accept="image/*" required>
+        </div>
+        <button type="submit">上传文件</button>
+    </form>
+    
+    <div id="result" class="result">等待上传...</div>
+    
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = '正在上传...';
+            resultDiv.className = 'result';
+            
+            const formData = new FormData(this);
+            
+            fetch('/file_upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.textContent = `上传成功！文件名: ${data.filename}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = `上传失败: ${data.message || '未知错误'}`;
+                    resultDiv.className = 'result error';
+                }
+            })
+            .catch(error => {
+                resultDiv.textContent = `请求错误: ${error.message}`;
+                resultDiv.className = 'result error';
+            });
+        });
+    </script>
+</body>
+</html>

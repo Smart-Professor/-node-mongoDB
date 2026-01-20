@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>已上传图片展示</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .image-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .image-container {
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            overflow: hidden;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .image-info {
+            padding: 10px 15px;
+            border-top: 1px solid #eee;
+        }
+        .image-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .image-meta {
+            font-size: 12px;
+            color: #666;
+        }
+        .refresh-btn {
+            background: #1890ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .refresh-btn:hover {
+            background: #40a9ff;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #1890ff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px 0;
+            color: #666;
+        }
+        .no-images {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <a href="/index.html" class="back-link">返回上传页面</a>
+    <h1>已上传图片展示</h1>
+    <button class="refresh-btn" onclick="loadImages()">刷新图片列表</button>
+    
+    <div id="loading" class="loading">加载中...</div>
+    <div id="gallery" class="gallery" style="display: none;"></div>
+    <div id="no-images" class="no-images" style="display: none;">暂无图片</div>
+
+    <script>
+        // 页面加载时自动获取图片列表
+        window.onload = loadImages;
+        
+        function loadImages() {
+            // 显示加载状态
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('gallery').style.display = 'none';
+            document.getElementById('no-images').style.display = 'none';
+            
+            // 发送请求获取图片列表 - 使用绝对路径确保端口正确
+            fetch('http://localhost:3003/api/images')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    return response.json();
+                })
+                .then(images => {
+                    // 隐藏加载状态
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // API直接返回图片数组
+                    const imageList = images || [];
+                    
+                    // 如果有图片，渲染图片列表
+                    if (imageList.length > 0) {
+                        document.getElementById('gallery').style.display = 'grid';
+                        renderImages(imageList);
+                    } else {
+                        // 如果没有图片，显示提示信息
+                        document.getElementById('no-images').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('获取图片列表失败:', error);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('no-images').textContent = '加载失败，请重试';
+                    document.getElementById('no-images').style.display = 'block';
+                });
+        }
+        
+        function renderImages(images) {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            
+            // 按修改时间降序排列（最新的在前面）
+            images.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+            
+            // 渲染每个图片
+            images.forEach(image => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                // 格式化文件大小
+                const size = formatFileSize(image.size);
+                
+                // 格式化修改时间
+                const date = new Date(image.modified).toLocaleString('zh-CN');
+                
+                card.innerHTML = `
+                    <div class="image-container">
+                        <img src="${image.url}" alt="${image.name}">
+                    </div>
+                    <div class="image-info">
+                        <div class="image-name">${image.name}</div>
+                        <div class="image-meta">大小: ${size}</div>
+                        <div class="image-meta">修改时间: ${date}</div>
+                    </div>
+                `;
+                
+                gallery.appendChild(card);
+            });
+        }
+        
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
